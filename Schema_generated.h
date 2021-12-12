@@ -10,9 +10,9 @@ namespace GroupName {
 
 struct GenderProperyKey;
 
-struct person;
-
 struct Group;
+
+struct person;
 
 enum Gender {
   Gender_Male = 0,
@@ -104,12 +104,74 @@ inline flatbuffers::Offset<GenderProperyKey> CreateGenderProperyKeyDirect(
       Value ? _fbb.CreateString(Value) : 0);
 }
 
+struct Group FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  enum {
+    VT_ID = 4,
+    VT_GROUPNAME = 6
+  };
+  int32_t Id() const {
+    return GetField<int32_t>(VT_ID, 0);
+  }
+  const flatbuffers::String *GroupName() const {
+    return GetPointer<const flatbuffers::String *>(VT_GROUPNAME);
+  }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<int32_t>(verifier, VT_ID) &&
+           VerifyOffset(verifier, VT_GROUPNAME) &&
+           verifier.VerifyString(GroupName()) &&
+           verifier.EndTable();
+  }
+};
+
+struct GroupBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_Id(int32_t Id) {
+    fbb_.AddElement<int32_t>(Group::VT_ID, Id, 0);
+  }
+  void add_GroupName(flatbuffers::Offset<flatbuffers::String> GroupName) {
+    fbb_.AddOffset(Group::VT_GROUPNAME, GroupName);
+  }
+  explicit GroupBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  GroupBuilder &operator=(const GroupBuilder &);
+  flatbuffers::Offset<Group> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = flatbuffers::Offset<Group>(end);
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<Group> CreateGroup(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    int32_t Id = 0,
+    flatbuffers::Offset<flatbuffers::String> GroupName = 0) {
+  GroupBuilder builder_(_fbb);
+  builder_.add_GroupName(GroupName);
+  builder_.add_Id(Id);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<Group> CreateGroupDirect(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    int32_t Id = 0,
+    const char *GroupName = nullptr) {
+  return GroupName::CreateGroup(
+      _fbb,
+      Id,
+      GroupName ? _fbb.CreateString(GroupName) : 0);
+}
+
 struct person FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
     VT_NAME = 4,
     VT_AGE = 6,
     VT_WEIGHT = 8,
-    VT_GENDER = 10
+    VT_GENDER = 10,
+    VT_GROUPID = 12
   };
   const flatbuffers::String *Name() const {
     return GetPointer<const flatbuffers::String *>(VT_NAME);
@@ -123,6 +185,9 @@ struct person FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::Vector<flatbuffers::Offset<GenderProperyKey>> *Gender() const {
     return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<GenderProperyKey>> *>(VT_GENDER);
   }
+  const flatbuffers::Vector<flatbuffers::Offset<Group>> *Groupid() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Group>> *>(VT_GROUPID);
+  }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_NAME) &&
@@ -132,6 +197,9 @@ struct person FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyOffset(verifier, VT_GENDER) &&
            verifier.VerifyVector(Gender()) &&
            verifier.VerifyVectorOfTables(Gender()) &&
+           VerifyOffset(verifier, VT_GROUPID) &&
+           verifier.VerifyVector(Groupid()) &&
+           verifier.VerifyVectorOfTables(Groupid()) &&
            verifier.EndTable();
   }
 };
@@ -151,6 +219,9 @@ struct personBuilder {
   void add_Gender(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<GenderProperyKey>>> Gender) {
     fbb_.AddOffset(person::VT_GENDER, Gender);
   }
+  void add_Groupid(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Group>>> Groupid) {
+    fbb_.AddOffset(person::VT_GROUPID, Groupid);
+  }
   explicit personBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -168,8 +239,10 @@ inline flatbuffers::Offset<person> Createperson(
     flatbuffers::Offset<flatbuffers::String> Name = 0,
     int32_t Age = 0,
     float Weight = 0.0f,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<GenderProperyKey>>> Gender = 0) {
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<GenderProperyKey>>> Gender = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Group>>> Groupid = 0) {
   personBuilder builder_(_fbb);
+  builder_.add_Groupid(Groupid);
   builder_.add_Gender(Gender);
   builder_.add_Weight(Weight);
   builder_.add_Age(Age);
@@ -182,76 +255,15 @@ inline flatbuffers::Offset<person> CreatepersonDirect(
     const char *Name = nullptr,
     int32_t Age = 0,
     float Weight = 0.0f,
-    const std::vector<flatbuffers::Offset<GenderProperyKey>> *Gender = nullptr) {
+    const std::vector<flatbuffers::Offset<GenderProperyKey>> *Gender = nullptr,
+    const std::vector<flatbuffers::Offset<Group>> *Groupid = nullptr) {
   return GroupName::Createperson(
       _fbb,
       Name ? _fbb.CreateString(Name) : 0,
       Age,
       Weight,
-      Gender ? _fbb.CreateVector<flatbuffers::Offset<GenderProperyKey>>(*Gender) : 0);
-}
-
-struct Group FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  enum {
-    VT_ITEM = 4,
-    VT_GROUPNAME = 6
-  };
-  const flatbuffers::Vector<flatbuffers::Offset<person>> *Item() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<person>> *>(VT_ITEM);
-  }
-  const flatbuffers::String *GroupName() const {
-    return GetPointer<const flatbuffers::String *>(VT_GROUPNAME);
-  }
-  bool Verify(flatbuffers::Verifier &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_ITEM) &&
-           verifier.VerifyVector(Item()) &&
-           verifier.VerifyVectorOfTables(Item()) &&
-           VerifyOffset(verifier, VT_GROUPNAME) &&
-           verifier.VerifyString(GroupName()) &&
-           verifier.EndTable();
-  }
-};
-
-struct GroupBuilder {
-  flatbuffers::FlatBufferBuilder &fbb_;
-  flatbuffers::uoffset_t start_;
-  void add_Item(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<person>>> Item) {
-    fbb_.AddOffset(Group::VT_ITEM, Item);
-  }
-  void add_GroupName(flatbuffers::Offset<flatbuffers::String> GroupName) {
-    fbb_.AddOffset(Group::VT_GROUPNAME, GroupName);
-  }
-  explicit GroupBuilder(flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  GroupBuilder &operator=(const GroupBuilder &);
-  flatbuffers::Offset<Group> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = flatbuffers::Offset<Group>(end);
-    return o;
-  }
-};
-
-inline flatbuffers::Offset<Group> CreateGroup(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<person>>> Item = 0,
-    flatbuffers::Offset<flatbuffers::String> GroupName = 0) {
-  GroupBuilder builder_(_fbb);
-  builder_.add_GroupName(GroupName);
-  builder_.add_Item(Item);
-  return builder_.Finish();
-}
-
-inline flatbuffers::Offset<Group> CreateGroupDirect(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    const std::vector<flatbuffers::Offset<person>> *Item = nullptr,
-    const char *GroupName = nullptr) {
-  return GroupName::CreateGroup(
-      _fbb,
-      Item ? _fbb.CreateVector<flatbuffers::Offset<person>>(*Item) : 0,
-      GroupName ? _fbb.CreateString(GroupName) : 0);
+      Gender ? _fbb.CreateVector<flatbuffers::Offset<GenderProperyKey>>(*Gender) : 0,
+      Groupid ? _fbb.CreateVector<flatbuffers::Offset<Group>>(*Groupid) : 0);
 }
 
 inline const GroupName::Group *GetGroup(const void *buf) {

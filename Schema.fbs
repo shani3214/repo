@@ -8,19 +8,20 @@ table GenderProperyKey (csharp_partial) {
     Key:Gender (id:0);
     Value:string (id:1);
 }
-
+table Group(csharp_partial){
+    Id:int(id:0);
+    GroupName:string(id:1);
+}
 table person (csharp_partial) {
     
     Name:string (id:0);
     Age:int (id:1);
     Weight:float(id:2);
     Gender:[GenderProperyKey](id:3);
+    Groupid:[Group](id:4);
 }
 
-table Group(csharp_partial){
-    Item:[person](id:0);
-    GroupName:string(id:1);
-}
+
 
 root_type person;
 root_type Group;
